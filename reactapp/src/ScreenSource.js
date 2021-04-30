@@ -3,37 +3,92 @@ import {Link} from 'react-router-dom'
 import './App.css';
 import { List, Avatar} from 'antd';
 import Nav from './Nav'
+import { connect } from 'react-redux';
 
-function ScreenSource() {
+function ScreenSource(props) {
 
   const [sourceList, setSourceList] = useState([])
+  const [language, setLanguage] = useState(props.language);
+
+  useEffect( () => {
+    const findLanguage = async () => {
+      
+      const reqFind = await fetch(`/user-language?token=${props.token}`);
+      const respondeFind = await reqFind.json();
+      setLanguage(respondeFind.lang)
+
+    };
+    findLanguage();
+
+  }, []);
 
   useEffect(() => {
     const APIResultsLoading = async() => {
-      const data = await fetch('https://newsapi.org/v2/sources?language=fr&country=fr&apiKey=b32c8b844d1243b1a7998d8228910f50')
+      let lang = 'fr';
+      let country = 'fr';
+
+      switch (language) {
+
+        case 'en' :
+            lang = 'en';
+            country = 'us';
+            break;
+      };
+      props.changeLanguage(language);
+
+      const data = await fetch(`https://newsapi.org/v2/sources?language=${lang}&country=${country}&apiKey=89dda5e59b344a2d8e5787e846aff07a`)
       const body = await data.json()
       setSourceList(body.sources)
     }
 
     APIResultsLoading()
-  }, [])
+  }, [language])
+
+  var updateLang = async (lang) => {
+    setLanguage(lang)
+
+    const reqLang = await fetch('/user-language', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: `lang=${lang}&token=${props.token}`
+    });
+  };
+
+  let contourLanguageFr = {width:'60px', margin:'10px',cursor:'pointer'};
+  let contourLanguageEn = {width:'60px', margin:'10px',cursor:'pointer'};
+
+  switch (language) {
+    case 'fr' :
+
+      if (language == 'fr'){
+        contourLanguageFr.border = '1px solid black';
+      };
+  
+    case 'en' :
+      if (language == 'en'){
+        contourLanguageEn.border = '1px solid black';
+      };
+  }
 
   return (
     <div>
         <Nav/>
-       
-       <div className="Banner"/>
+      
+        <div style={{justifyContent: 'center', display: 'flex'}} className="Banner">
+          <img style={contourLanguageFr} src={'/images/fr.png'} onClick={() => updateLang ('fr')}/>
+          <img style={contourLanguageEn} src={'/images/en.png'} onClick={() => updateLang ('en')}/>
+        </div>
 
-       <div className="HomeThemes">
+      <div className="HomeThemes">
           
               <List
                   itemLayout="horizontal"
                   dataSource={sourceList}
-                  renderItem={source => (
+                  renderItem={(source, i) => (
                     <List.Item>
                       <List.Item.Meta
                         avatar={<Avatar src={`/images/${source.category}.png`} />}
-                        title={<Link to={`/screenarticlesbysource/${source.id}`}>{source.name}</Link>}
+                        title={<Link to={`/screenarticlesbysource/${source.id}`} key={i}>{source.name}</Link>}
                         description={source.description}
                       />
                     </List.Item>
@@ -42,9 +97,27 @@ function ScreenSource() {
 
 
           </div>
-                 
+    
       </div>
   );
 }
 
-export default ScreenSource;
+function mapStateToProps(state) {
+  return {
+      language: state.language,token: state.token
+    }
+  };
+
+function mapDispatchToProps(dispatch) {
+  return {
+      changeLanguage: function(language) {
+      dispatch({ type: 'changeLanguage',
+                language: language });
+      }
+    }
+  };
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(ScreenSource);

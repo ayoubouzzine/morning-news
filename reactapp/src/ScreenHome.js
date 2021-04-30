@@ -2,8 +2,9 @@ import React, {useState} from 'react';
 import './App.css';
 import {Input,Button} from 'antd';
 import {Link, Redirect} from 'react-router-dom'
+import { connect } from 'react-redux';
 
-function ScreenHome() {
+function ScreenHome(props) {
 
   const [signUpUsername, setSignUpUsername] = useState('')
   const [signUpEmail, setSignUpEmail] = useState('')
@@ -29,13 +30,15 @@ function ScreenHome() {
 
     if(body.result == true){
       setUserExists(true)
+      // 3.2 récupérer la valeur du token
+      props.addToken(body.token);
     } else {
       setErrorsSignup(body.error)
     }
   }
 
   var handleSubmitSignin = async () => {
- 
+
     const data = await fetch('/sign-in', {
       method: 'POST',
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -46,6 +49,8 @@ function ScreenHome() {
 
     if(body.result == true){
       setUserExists(true)
+      // 3.2 récupétarion du token
+      props.addToken(body.token);
     }  else {
       setErrorsSignin(body.error)
     }
@@ -72,13 +77,24 @@ function ScreenHome() {
 
           <div className="Sign">
                   
-            <Input onChange={(e) => setSignInEmail(e.target.value)} className="Login-input" placeholder="email" />
+            <Input 
+            onChange={(e) => setSignInEmail(e.target.value)} 
+            className="Login-input" 
+            placeholder="email" 
+            value={signInEmail}/>
 
-            <Input.Password onChange={(e) => setSignInPassword(e.target.value)} className="Login-input" placeholder="password" />
+            <Input.Password 
+            onChange={(e) => setSignInPassword(e.target.value)} 
+            className="Login-input" 
+            placeholder="password" 
+            value={signInPassword}/>
             
             {tabErrorsSignin}
 
-            <Button onClick={() => handleSubmitSignin()}  style={{width:'80px'}} type="primary">Sign-in</Button>
+            <Button 
+            onClick={() => handleSubmitSignin()}  
+            style={{width:'80px'}} 
+            type="primary">Sign-in</Button>
 
           </div>
 
@@ -86,20 +102,46 @@ function ScreenHome() {
 
           <div className="Sign">
                   
-            <Input onChange={(e) => setSignUpUsername(e.target.value)} className="Login-input" placeholder="username" />
+            <Input 
+            onChange={(e) => setSignUpUsername(e.target.value)} 
+            className="Login-input" 
+            placeholder="username" 
+            value={signUpUsername}/>
 
-            <Input onChange={(e) => setSignUpEmail(e.target.value)} className="Login-input" placeholder="email" />
+            <Input 
+            onChange={(e) => setSignUpEmail(e.target.value)} 
+            className="Login-input" 
+            placeholder="email" 
+            value={signUpEmail}/>
 
-            <Input.Password onChange={(e) => setSignUpPassword(e.target.value)} className="Login-input" placeholder="password" />
+            <Input.Password 
+            onChange={(e) => setSignUpPassword(e.target.value)} 
+            className="Login-input" 
+            placeholder="password" 
+            value={signUpPassword}/>
       
             {tabErrorsSignup}
 
-            <Button onClick={() => handleSubmitSignup()} style={{width:'80px'}} type="primary">Sign-up</Button>
+            <Button 
+            onClick={() => handleSubmitSignup()} 
+            style={{width:'80px'}} 
+            type="primary">Sign-up</Button>
 
           </div>
 
       </div>
   );
 }
-
-export default ScreenHome;
+  // 3.2 envoi de la valeur dans le store
+function mapDispatchToProps(dispatch){
+  return {
+    addToken: function(token){
+      dispatch({type: 'addToken', token: token})
+    }
+  }
+}
+  
+  export default connect(
+  null,
+  mapDispatchToProps
+  )(ScreenHome)

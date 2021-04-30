@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import './App.css';
 import { Card, Icon, Modal} from 'antd';
 import Nav from './Nav'
@@ -11,7 +11,33 @@ function ScreenMyArticles(props) {
   const [visible, setVisible] = useState(false)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [language, setLanguage] = useState('');
 
+  useEffect(() => {
+
+    const findArticlesInWishlist = async() => {
+      const wishlist = await fetch(`/wishlist-article?lang=${language}&token=${props.token}`);
+      const wishlistResponse = await wishlist.json();
+
+      props.saveArticle(wishlistResponse.articles);
+      console.log(wishlistResponse.articles);
+    };
+    findArticlesInWishlist();
+  }, [language]);
+
+  const deleteArticle = async (title) => {
+    props.deleteFromWishlist(title);
+
+    const deleteDB = await fetch('/wishlist-article', {
+      method: 'DELETE',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: `title=${title}&token=${props.token}`
+    });
+  };
+
+  const filtreLanguage = (lang) => {
+    setLanguage(lang);
+  };
 
 
   var showModal = (title, content) => {
@@ -33,21 +59,22 @@ function ScreenMyArticles(props) {
 
   var noArticles
   if(props.myArticles == 0){
-    noArticles = <div style={{marginTop:"30px"}}>No Articles</div>
+    noArticles = <div style={{marginTop:"70px"}}>No Articles</div>
   }
 
   return (
     <div>
-         
+        
             <Nav/>
 
-            <div className="Banner"/>
-
-            {noArticles}
+            <div style={{justifyContent: 'center', display: 'flex'}} className="Banner">
+              <img style={{width:'60px', margin:'10px',cursor:'pointer'}} src={'/images/fr.png'} onClick={() => filtreLanguage('fr')}/>
+              <img style={{width:'60px', margin:'10px',cursor:'pointer'}} src={'/images/en.png'} onClick={() => filtreLanguage('en')}/>
+            </div>
 
             <div className="Card">
     
-
+              {noArticles}
             {props.myArticles.map((article,i) => (
                 <div key={i} style={{display:'flex',justifyContent:'center'}}>
 
@@ -67,8 +94,8 @@ function ScreenMyArticles(props) {
                     }
                     actions={[
                         <Icon type="read" key="ellipsis2" onClick={() => showModal(article.title,article.content)} />,
-                        <Icon type="delete" key="ellipsis" onClick={() => props.deleteToWishList(article.title)} />
-                    ]}
+                        <Icon type="delete" key="ellipsis" onClick={() => deleteArticle(article.title)}/>
+                      ]}
                     >
 
                     <Meta
@@ -90,34 +117,29 @@ function ScreenMyArticles(props) {
 
               ))}
 
-
-
-       
-
-                
-
-             </div>
-      
- 
+            </div>
 
       </div>
   );
 }
 
 function mapStateToProps(state){
-  return {myArticles: state.wishList}
-}
-
-function mapDispatchToProps(dispatch){
-  return {
-    deleteToWishList: function(articleTitle){
-      dispatch({type: 'deleteArticle',
-        title: articleTitle
-      })
+  return {myArticles: state.wishList, token: state.token}
     }
-  }
-}
 
+
+    function mapDispatchToProps(dispatch) {
+      return {
+          deleteFromWishlist: function(title) {
+          dispatch({ type: 'deleteArticle',
+                    title: title });
+          },
+          saveArticle: function(articles) {
+            dispatch({ type: 'saveArticle',
+                      articles: articles })
+          }
+        }
+      };
 
 
 export default connect(

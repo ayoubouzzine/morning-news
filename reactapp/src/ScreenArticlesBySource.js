@@ -15,11 +15,11 @@ function ScreenArticlesBySource(props) {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
 
-  var { id } = useParams();
+  const id_sources = props.match.params.id;
 
   useEffect(() => {
     const findArticles = async() => {
-      const data = await fetch(`https://newsapi.org/v2/top-headlines?sources=${id}&apiKey=b32c8b844d1243b1a7998d8228910f50`)
+      const data = await fetch(`https://newsapi.org/v2/top-headlines?sources=${id_sources}&apiKey=89dda5e59b344a2d8e5787e846aff07a`)
       const body = await data.json()
       console.log(body)
       setArticleList(body.articles) 
@@ -27,6 +27,17 @@ function ScreenArticlesBySource(props) {
 
     findArticles()    
   },[])
+
+  const saveWishlist = async article => {
+
+    props.addToWishList(article);
+
+    const saveResponse = await fetch('/wishlist-article', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: `name=${article.title}&content=${article.content}&desc=${article.description}&lang=${props.language}&img=${article.urlToImage}&token=${props.token}`
+    })
+  };  
 
   var showModal = (title, content) => {
     setVisible(true)
@@ -47,7 +58,7 @@ function ScreenArticlesBySource(props) {
 
   return (
     <div>
-         
+        
             <Nav/>
 
             <div className="Banner"/>
@@ -72,7 +83,7 @@ function ScreenArticlesBySource(props) {
                   }
                   actions={[
                       <Icon type="read" key="ellipsis2" onClick={() => showModal(article.title,article.content)} />,
-                      <Icon type="like" key="ellipsis" onClick={()=> {props.addToWishList(article)}} />
+                      <Icon type="like" key="ellipsis" onClick={()=> {saveWishlist(article)}}/>
                   ]}
                   >
 
@@ -95,17 +106,17 @@ function ScreenArticlesBySource(props) {
 
               ))}
               
-
-
-            
-
-           </div> 
-
-         
+          </div> 
       
       </div>
   );
 }
+
+function mapStateToProps(state) {
+  return {
+      token: state.token, selectLanguage: state.selectLanguage
+    }
+  };
 
 function mapDispatchToProps(dispatch){
   return {
@@ -118,6 +129,6 @@ function mapDispatchToProps(dispatch){
 }
 
 export default connect(
-  null,
+  mapStateToProps,
   mapDispatchToProps
 )(ScreenArticlesBySource)
